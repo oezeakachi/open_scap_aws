@@ -1,9 +1,9 @@
-data "aws_ami" "Fedora-obi" {
+data "aws_ami" "obi-fedora" {
   most_recent = true
 
   filter {
     name   = "image-id"
-    values = ["ami-03c4374ac4f47ba28"]
+    values = ["ami-01e8b0324bd546dc6"]
   }
 
   filter {
@@ -23,7 +23,7 @@ data "aws_ami" "Fedora-obi" {
 
   filter {
     name   = "name"
-    values = ["IMAGE_KEY"]
+    values = ["obi-fedora"]
   }
 }
 
@@ -85,17 +85,18 @@ resource "aws_iam_policy" "policy-for-ssm" {
 EOF
 }
 
-
 resource "aws_iam_role_policy_attachment" "s3-ssm-attach" {
-  for_each    = toset([
-    aws_iam_policy.policy-for-s3.arn,
-    aws_iam_policy.policy-for-ssm.arn,
-    "arn:aws:iam::aws:policy/AmazonS3FullAccess",
-    "arn:aws:iam::aws:policy/AmazonSSMFullAccess",
-  ])
-  role        = aws_iam_role.S3-SSM-IamRole.name
-  policy_arn  = each.value
+  for_each = {
+    "policy-for-s3"   = aws_iam_policy.policy-for-s3.arn
+    "policy-for-ssm"  = aws_iam_policy.policy-for-ssm.arn
+    "s3-full-access"  = "arn:aws:iam::aws:policy/AmazonS3FullAccess"
+    "ssm-full-access" = "arn:aws:iam::aws:policy/AmazonSSMFullAccess"
+  }
+
+  role       = aws_iam_role.S3-SSM-IamRole.name
+  policy_arn = each.value
 }
+
 
 resource "aws_iam_instance_profile" "instance_profile" {
   name = "S3-SSM-IamProfile"
@@ -107,7 +108,7 @@ resource "aws_iam_instance_profile" "instance_profile" {
 
 resource "aws_instance" "ec2_public" {
   //count                       = 1
-  ami                         = data.aws_ami.Fedora-obi.id
+  ami                         = data.aws_ami.obi-fedora.id
   associate_public_ip_address = true
   instance_type               = "t3.2xlarge"
   key_name                    = var.key_name
