@@ -172,16 +172,35 @@ resource "aws_ssm_document" "scan-process" {
         properties:
           - id: '0.aws:runShellScript'
             runCommand:  
+              - echo "Add the ssg-fedora-ds.xml to the scriptFile variable"
               - scriptFile='/usr/share/xml/scap/ssg/content/ssg-fedora-ds.xml'
+              - echo "Run Openscap command"
               - oscap xccdf eval --fetch-remote-resources --profile  xccdf_org.ssgproject.content_profile_standard --results-arf arf.xml --report report.html $scriptFile
+              - echo "Grab instance id"
               - instanceId=$(curl http://169.254.169.254/latest/meta-data/instance-id)
+              - echo "Create Timestamp"
               - timestamp=$(date +%d-%m-%Y-%T)
+              - echo "S3 copy arf.xml"
               - /usr/local/bin/aws s3 cp arf.xml s3://${aws_s3_bucket.SCAPScanResultsBucket.id}/${module.ec2.instance_id}/$timestamp-scap-results.xml
+              - echo "S3 copy report.xml"
               - /usr/local/bin/aws s3 cp report.html s3://${aws_s3_bucket.SCAPScanResultsBucket.id}/${module.ec2.instance_id}/$timestamp-scap-results.html
-              - if [ $? -ne 0 ]; then echo "Error occurred during script execution" >> error.log; fi
+              - echo " Create error log"
+              - touch error.log
+              - if [ $? -ne 0 ]; then  echo "Error occurred during script execution" >> error.log; fi
+              - echo "S3 copy error log"
               - /usr/local/bin/aws s3 cp error.log s3://${aws_s3_bucket.SCAPScanResultsBucket.id}/${module.ec2.instance_id}/error.log
 DOC
+} 
+
+resource "aws_ssm_association" "run_ssm" {
+  name = "test_document"
+
+  targets {
+    key    = "InstanceIds"
+    values = ["i-040070af477a47461"]
+  }
 }
+
 
 
 //runtimeConfig:
