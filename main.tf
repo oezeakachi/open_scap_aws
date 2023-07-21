@@ -73,9 +73,6 @@ module "ec2" {
 
 
 
-
-
-
 resource "aws_s3_bucket_notification" "SCAPScanResultsBucketNotification" {
   bucket = aws_s3_bucket.SCAPScanResultsBucket.id
 
@@ -200,6 +197,12 @@ resource "aws_ssm_association" "run_ssm" {
     values = ["i-040070af477a47461"]
   }
 }
+
+resource "aws_lambda_invocation" "invoke_lambda" {
+  function_name = aws_lambda_function.ProcessSCAPScanResults.arn
+  input         = "{}" // set your input payload here
+}
+
 
 
 
