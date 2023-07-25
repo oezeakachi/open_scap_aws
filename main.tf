@@ -71,6 +71,73 @@ module "ec2" {
   
 }
 
+resource "aws_cloudwatch_log_group" "lambda_activities" {
+  name              = "Lambda_logs"
+}
+
+
+
+resource "aws_iam_role" "CW-Access-IamRole" {
+  name = "cw-logs-role"
+
+  assume_role_policy = <<EOF
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Principal": {
+        "Service": "ec2.amazonaws.com"
+      },
+      "Action": "sts:AssumeRole"
+    }
+  ]
+}
+EOF
+}
+
+resource "aws_iam_policy" "policy-for-cw" {
+  name        = "policy-for-cw"
+  description = "Policy for cw"
+
+ policy = jsonencode({
+    "Version" : "2012-10-17",
+    "Statement" : [
+      {
+        Action : [
+          "logs:CreateLogStream",
+          "logs:PutLogEvents"
+        ],
+        Effect : "Allow",
+        Resource : "arn:aws:logs:*:*:*"
+      }
+    ]
+  })
+}
+
+resource "aws_iam_role_policy_attachment" "cw-attach" {
+  for_each = {
+    "policy-for-cw"   = aws_iam_policy.policy-for-cw.arn
+    "cloudwatch-full-access" = "arn:aws:iam::aws:policy/CloudWatchFullAccess"
+  }
+
+  role       = aws_iam_role.CW-Access-IamRole.name
+  policy_arn = each.value
+}
+
+
+resource "aws_iam_instance_profile" "lambda_profile" {
+  name = "CW-IamProfile"
+  role = aws_iam_role.CW-Access-IamRole.name
+}
+
+resource "aws_cloudwatch_log_group" "lambda_log_group" {
+  name              = "Scap_filtering"
+  retention_in_days = 7
+  lifecycle {
+    prevent_destroy = false
+  }
+}
 
 
 resource "aws_s3_bucket_notification" "SCAPScanResultsBucketNotification" {
@@ -92,6 +159,7 @@ resource "aws_lambda_function" "ProcessSCAPScanResults" {
   runtime       = "python3.8"
   timeout       = 300
   source_code_hash = filebase64sha256("${path.module}/open_scap_tests.py.zip")
+  depends_on    = [aws_cloudwatch_log_group.lambda_log_group]
 }
 
 resource "aws_lambda_permission" "S3InvokeLambdaPermission" {
@@ -157,7 +225,7 @@ resource "aws_dynamodb_table" "SCAPScanResults" {
 
 
 resource "aws_ssm_document" "scan-process" {
-  name            = "test_document"
+  name            = "scanning"
   document_format = "YAML"
   document_type   = "Command"
   content = <<DOC
@@ -190,20 +258,16 @@ DOC
 } 
 
 resource "aws_ssm_association" "run_ssm" {
-  name = "test_document"
+  name = aws_ssm_document.scan-process.name
 
   targets {
     key    = "InstanceIds"
-    values = ["i-040070af477a47461"]
+    values = ["${module.ec2.instance_id}"]
   }
 }
+
 
 resource "aws_lambda_invocation" "invoke_lambda" {
   function_name = aws_lambda_function.ProcessSCAPScanResults.arn
   input         = "{}" // set your input payload here
 }
-
-
-
-
-//runtimeConfig:

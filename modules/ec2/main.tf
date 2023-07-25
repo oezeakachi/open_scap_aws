@@ -105,7 +105,6 @@ resource "aws_iam_instance_profile" "instance_profile" {
 
 
 
-
 resource "aws_instance" "ec2_public" {
   //count                       = 1
   ami                         = data.aws_ami.obi-fedora.id
