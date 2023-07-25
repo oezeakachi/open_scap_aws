@@ -28,13 +28,15 @@ ssmClient = boto3.client('ssm')
 
 
 def lambda_handler(event, context):
-    
-    # get the bucket name so that we can get the file from s3
-    bucket_name = event['Records'][0]['s3']['bucket']['name']
-    file_key = event['Records'][0]['s3']['object']['key']
+    # Retrieve bucket name and file key directly from the event
+    bucket_name = event['detail']['requestParameters']['bucketName']
+    file_key = event['detail']['requestParameters']['key']
     aws_account_id = context.invoked_function_arn.split(":")[4]
     region = context.invoked_function_arn.split(":")[3]
     
+    # ... (the rest of the code remains unchanged)
+
+
     #get the instance id from the s3 path
     instanceId = file_key.split('/')[0]
     
@@ -162,7 +164,7 @@ def sendMetric(value, title, instanceId):
         ]
     )
 
-# fetches the ignore list from DynamoDB    
+#fetches the ignore list from DynamoDB    
 def getIgnoreList():
     table = dynamodb.Table('SCAP_Scan_Ignore_List')
     #if you list is really long this could fail as it will pagonate
