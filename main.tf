@@ -71,6 +71,11 @@ module "ec2" {
   
 }
 
+
+
+
+
+
 resource "aws_cloudwatch_log_group" "lambda_activities" {
   name              = "Lambda_logs"
 }
@@ -87,7 +92,7 @@ resource "aws_iam_role" "CW-Access-IamRole" {
     {
       "Effect": "Allow",
       "Principal": {
-        "Service": "ec2.amazonaws.com"
+        "Service": "lambda.amazonaws.com"
       },
       "Action": "sts:AssumeRole"
     }
@@ -96,23 +101,26 @@ resource "aws_iam_role" "CW-Access-IamRole" {
 EOF
 }
 
+
 resource "aws_iam_policy" "policy-for-cw" {
   name        = "policy-for-cw"
   description = "Policy for cw"
 
  policy = jsonencode({
-    "Version" : "2012-10-17",
-    "Statement" : [
-      {
-        Action : [
-          "logs:CreateLogStream",
-          "logs:PutLogEvents"
-        ],
-        Effect : "Allow",
-        Resource : "arn:aws:logs:*:*:*"
-      }
-    ]
-  })
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Action": [
+        "logs:CreateLogGroup",
+        "logs:CreateLogStream",
+        "logs:PutLogEvents"
+      ],
+      "Resource": "arn:aws:logs:eu-west-1:121525555092:my-scap-scan-bucket"
+    }
+  ]
+}
+)
 }
 
 resource "aws_iam_role_policy_attachment" "cw-attach" {
@@ -146,10 +154,9 @@ resource "aws_s3_bucket_notification" "SCAPScanResultsBucketNotification" {
   lambda_function {
     lambda_function_arn = aws_lambda_function.ProcessSCAPScanResults.arn
     events              = ["s3:ObjectCreated:*"]
-    filter_prefix       = ""
-    filter_suffix       = ".xml"
   }
 }
+
 
 resource "aws_lambda_function" "ProcessSCAPScanResults" {
   filename      = "${path.module}/open_scap_tests.py.zip"
@@ -158,6 +165,7 @@ resource "aws_lambda_function" "ProcessSCAPScanResults" {
   handler       = "lambda_function.lambda_handler"
   runtime       = "python3.8"
   timeout       = 300
+  memory_size      = 512
   source_code_hash = filebase64sha256("${path.module}/open_scap_tests.py.zip")
   depends_on    = [aws_cloudwatch_log_group.lambda_log_group]
 }
@@ -189,6 +197,93 @@ resource "aws_iam_role" "SCAPEC2InstanceRole" {
 EOF
 }
 
+resource "aws_iam_policy" "policy-for-s3-scap" {
+  name        = "policy-for-s3-scap"
+  description = "Policy for-s3-scap"
+
+  policy = <<EOF
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Action": "s3:*",
+      "Resource": "*"
+    }
+  ]
+}
+EOF
+}
+
+/*
+resource "aws_iam_role_policy_attachment" "s3-scap-attach" {
+    
+    
+ 
+  role       = aws_iam_role.SCAPEC2InstanceRole.name
+  policy_arn = aws_iam_policy.policy-for-s3-scap.arn
+} */
+
+resource "aws_iam_policy" "policy-for-ssm-scap" {
+  name = "policy-for-ssm-scap"
+
+  policy = <<EOF
+{
+  "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Effect": "Allow",
+            "Action": "ssm:*",
+            "Resource": "*"
+        }
+    ]
+}
+EOF
+}
+
+resource "aws_iam_policy" "policy-for-dynamodb-scap" {
+  name = "policy-for-dynamodb-scap"
+
+  policy = <<EOF
+{
+  "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Effect": "Allow",
+            "Action": "dynamodb:*",
+            "Resource": "*"
+        }
+    ]
+}
+EOF
+} 
+
+
+/*
+resource "aws_iam_role_policy_attachment" "ssm-scap-attach" {
+    
+    
+ 
+  role       = aws_iam_role.SCAPEC2InstanceRole.name
+  policy_arn = aws_iam_policy.policy-for-ssm-scap.arn
+} */
+
+
+
+
+resource "aws_iam_role_policy_attachment" "s3-scap-ssm-attach" {
+  for_each = {
+    "policy-for-s3-scap" = aws_iam_policy.policy-for-s3-scap.arn
+    "policy-for-ssm-scap"  = aws_iam_policy.policy-for-ssm-scap.arn
+    "policy-for-dynamodb-scap"  = aws_iam_policy.policy-for-dynamodb-scap.arn
+    "cloudwatch-full-access" = "arn:aws:iam::aws:policy/CloudWatchFullAccess"
+    //"s3-full-access"  = "arn:aws:iam::aws:policy/AmazonS3FullAccess"
+    //"ssm-full-access" = "arn:aws:iam::aws:policy/AmazonSSMFullAccess"
+  }
+
+  role       = aws_iam_role.SCAPEC2InstanceRole.name
+  policy_arn = each.value
+}
 
 
 
