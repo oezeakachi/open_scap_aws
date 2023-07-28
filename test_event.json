@@ -1,0 +1,38 @@
+{
+    "Records": [
+      {
+        "eventVersion": "2.1",
+        "eventSource": "aws:s3",
+        "awsRegion": "eu-west-1",
+        "eventTime": "2019-09-03T19:37:27.192Z",
+        "eventName": "ObjectCreated:Put",
+        "userIdentity": {
+          "principalId": "AWS:121525555092"
+        },
+        "requestParameters": {
+          "sourceIPAddress": "205.255.255.255"
+        },
+        "responseElements": {
+          "x-amz-request-id": "",
+          "x-amz-id-2": ""
+        },
+        "s3": {
+          "s3SchemaVersion": "1.0",
+          "configurationId": "828aa6fc-f7b5-4305-8584-487c791949c1",
+          "bucket": {
+            "name": "my-scap-scan-bucket",
+            "ownerIdentity": {
+              "principalId": "121525555092"
+            },
+            "arn": "arn:aws:s3:::my-scap-scan-bucket"
+          },
+          "object": {
+            "key": "i-0b0ed62b9e3d7a45f/26-07-2023-18:23:04-scap-results.xml",
+            "size": 3325000,
+            "eTag": "",
+            "sequencer": ""
+          }
+        }
+      }
+    ]
+  }
