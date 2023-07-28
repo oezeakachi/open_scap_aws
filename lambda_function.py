@@ -43,7 +43,7 @@ def lambda_handler(event, context):
 
     # parse the XML from s3
     root = ET.fromstring(scap_report['Body'].read())
-    
+    print (root)
     # Get parameter for using Security Hub
     useSecurityHub = ssmClient.get_parameter(Name='/SCAPTesting/EnableSecurityHub')['Parameter']['Value']
     
@@ -78,7 +78,8 @@ def lambda_handler(event, context):
         if testId not in ignoreList:
             if(item.findtext('{http://checklists.nist.gov/xccdf/1.2}result') == "fail"):
                 buildDynamoDBList(dynamoDbItems, instanceId, item, bucket_name, file_key)
-                if useSecurityHub == "yes" and item.attrib.get("severity") in ["high","medium","low"]:
+                #print(buildDynamoDBList(dynamoDbItems, instanceId, item, bucket_name, file_key))
+                if useSecurityHub == "true" and item.attrib.get("severity") in ["high","medium","low"]:
                     buildSecurityHubFindingsList(securityHubFindings,root, instanceId, item, region, aws_account_id, testVersion, bucket_name, file_key)
                 if(item.attrib.get("severity") == "high"):
                     high+=1
@@ -94,8 +95,10 @@ def lambda_handler(event, context):
     sendMetric(medium, 'SCAP Medium Finding', instanceId)
     sendMetric(low, 'SCAP Low Finding', instanceId)
     
+    print(dynamoDbItems)
     # Batch write all findings to DynamoDB
     table = dynamodb.Table('SCAPScanResults')
+    print(dynamoDbItems)
     with table.batch_writer() as batch:
         for item in dynamoDbItems:
             batch.put_item(
@@ -103,7 +106,9 @@ def lambda_handler(event, context):
             )
     
     # if Security Hub is enabled, send the results in batches of 100
-    if useSecurityHub == "yes":
+    print("REACHED SH")
+    print(useSecurityHub)
+    if useSecurityHub == "true":
         myfindings = securityHubFindings
         try:
             findingsLeft = True
@@ -175,7 +180,7 @@ def getIgnoreList():
     
 def buildSecurityHubFindingsList(securityHubFindings, root, instanceId, item, region, aws_account_id, testVersion, bucket_name, file_key):
     rule = root.find(".//{http://checklists.nist.gov/xccdf/1.2}Rule[@id='" + item.attrib.get("idref") + "']")
-    profile = root.find('.//{http://checklists.nist.gov/xccdf/1.2}Profile[@id="xccdf_org.ssgproject.content_profile_stig"]')
+    profile = root.find('.//{http://checklists.nist.gov/xccdf/1.2}Profile[@id="xccdf_org.ssgproject.content_profile_standard"]')
 
     # fix the time format from OpenSCAP to Security Hub
     time = item.attrib.get("time")
