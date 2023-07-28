@@ -148,6 +148,8 @@ resource "aws_cloudwatch_log_group" "lambda_log_group" {
 }
 
 
+
+/*
 resource "aws_s3_bucket_notification" "SCAPScanResultsBucketNotification" {
   bucket = aws_s3_bucket.SCAPScanResultsBucket.id
 
@@ -155,18 +157,20 @@ resource "aws_s3_bucket_notification" "SCAPScanResultsBucketNotification" {
     lambda_function_arn = aws_lambda_function.ProcessSCAPScanResults.arn
     events              = ["s3:ObjectCreated:*"]
   }
-}
+} */
+
+
 
 
 resource "aws_lambda_function" "ProcessSCAPScanResults" {
-  filename      = "${path.module}/open_scap_tests.py.zip"
+  filename      = "${path.module}/lambda_function.py.zip"
   function_name = "ProcessSCAPScanResults"
   role          = aws_iam_role.SCAPEC2InstanceRole.arn
   handler       = "lambda_function.lambda_handler"
   runtime       = "python3.8"
   timeout       = 300
   memory_size      = 512
-  source_code_hash = filebase64sha256("${path.module}/open_scap_tests.py.zip")
+  source_code_hash = filebase64sha256("${path.module}/lambda_function.py.zip")
   depends_on    = [aws_cloudwatch_log_group.lambda_log_group]
 }
 
@@ -304,6 +308,19 @@ resource "aws_iam_role_policy_attachment" "s3-scap-ssm-attach" {
 }
 
 
+resource "aws_s3_bucket_notification" "SCAPScanResultsBucketNotification" {
+  bucket = aws_s3_bucket.SCAPScanResultsBucket.id
+
+  lambda_function {
+    lambda_function_arn = aws_lambda_function.ProcessSCAPScanResults.arn
+    events              = ["s3:ObjectCreated:*"]
+    filter_prefix       = "AWSLogs/"
+    filter_suffix       = ".log"
+
+  }
+
+  depends_on = [aws_lambda_permission.S3InvokeLambdaPermission]
+}
 
 resource "aws_ssm_parameter" "EnableSecurityHubFindingsParameter" {
   name        = "/SCAPTesting/EnableSecurityHub"
@@ -393,8 +410,8 @@ resource "aws_ssm_association" "run_ssm" {
   }
 }
 
-
+/*
 resource "aws_lambda_invocation" "invoke_lambda" {
   function_name = aws_lambda_function.ProcessSCAPScanResults.arn
   input         = "{}" // set your input payload here
-}
+}*/
