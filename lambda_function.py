@@ -21,6 +21,7 @@ import boto3
 import datetime
 from datetime import date
 import xml.etree.ElementTree as ET 
+import urllib.parse
 
 s3 = boto3.client('s3')
 cloudWatch = boto3.client('cloudwatch')
@@ -37,10 +38,16 @@ def lambda_handler(event, context):
     aws_account_id = context.invoked_function_arn.split(":")[4]
     region = context.invoked_function_arn.split(":")[3]
     print("Region:\n" + region)
+    print ("bucket_name:\n" + bucket_name)  
+    print ("file_key:\n" + file_key) 
+    file_key = urllib.parse.unquote(file_key)
+    print ("bucket_name:\n" + bucket_name)  
+    print ("file_key:\n" + file_key) 
     #get the instance id from the s3 path
     instanceId = file_key.split('/')[0]
     
     # get the object
+
     scap_report = s3.get_object(Bucket=bucket_name, Key=file_key)
 
     # parse the XML from s3

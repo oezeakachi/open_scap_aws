@@ -308,6 +308,7 @@ resource "aws_s3_bucket_notification" "SCAPScanResultsBucketNotification" {
   lambda_function {
     lambda_function_arn = aws_lambda_function.ProcessSCAPScanResults.arn
     events              = ["s3:ObjectCreated:*"]
+    filter_suffix       = ".xml"
   }
 
 } 
@@ -408,6 +409,9 @@ resource "aws_ssm_association" "run_ssm" {
     values = ["${module.ec2.instance_id}"]
   }
 }
+
+
+
 
 /*
 resource "aws_lambda_invocation" "invoke_lambda" {
