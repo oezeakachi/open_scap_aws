@@ -1,6 +1,6 @@
-## Openscap testing env in AWS for AMI's built via Redhat Image Builder 
+## Openscap testing env for Red Hat Image Builder images
 
-This project will create a testing environment that runs vunerability scans on an EC2 instance whose AMI was created by Red Hat's Image Building tool 
+This project will create a testing environment in AWS that runs vunerability scans on an EC2 instance whose AMI was created by Red Hat's Image Building tool 
 
 ## High level diagram
 
