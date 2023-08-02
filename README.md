@@ -4,7 +4,7 @@ This project will create a testing environment that runs vunerability scans on a
 
 ## High level diagram
 
-![Diagram](img/scap_testng.png)
+![Diagram](img/scap_testing.png)
 
 ## AWS Logical Diagram
 ![Diagram](img/openscap_archi.png)
