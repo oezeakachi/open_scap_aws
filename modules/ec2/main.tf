@@ -1,3 +1,5 @@
+// Data filter searches for AMI 
+
 data "aws_ami" "obi-fedora" {
   most_recent = true
 
@@ -28,6 +30,7 @@ data "aws_ami" "obi-fedora" {
 }
 
 
+// IAM role that gives access to SSM + S3 via EC2 instance 
 
 resource "aws_iam_role" "S3-SSM-IamRole" {
   name = "ss3-ssm-role"
@@ -48,6 +51,7 @@ resource "aws_iam_role" "S3-SSM-IamRole" {
 EOF
 }
 
+// S3 Policy creation 
 
 resource "aws_iam_policy" "policy-for-s3" {
   name        = "policy-for-s3"
@@ -67,6 +71,7 @@ resource "aws_iam_policy" "policy-for-s3" {
 EOF
 }
 
+// iam policy for ssm 
 
 resource "aws_iam_policy" "policy-for-ssm" {
   name = "ssm-policy"
@@ -85,6 +90,8 @@ resource "aws_iam_policy" "policy-for-ssm" {
 EOF
 }
 
+// Policy attachment for ssm and s3 policy to role
+
 resource "aws_iam_role_policy_attachment" "s3-ssm-attach" {
   for_each = {
     "policy-for-s3"   = aws_iam_policy.policy-for-s3.arn
@@ -97,6 +104,7 @@ resource "aws_iam_role_policy_attachment" "s3-ssm-attach" {
   policy_arn = each.value
 }
 
+// Adding role to instance profile
 
 resource "aws_iam_instance_profile" "instance_profile" {
   name = "S3-SSM-IamProfile"
@@ -104,6 +112,7 @@ resource "aws_iam_instance_profile" "instance_profile" {
 }
 
 
+//Creation of EC2 instance
 
 resource "aws_instance" "ec2_public" {
   //count                       = 1
@@ -146,7 +155,7 @@ resource "aws_instance" "ec2_public" {
       host        = self.public_ip
     }
   }
-
+// Configuration od EC2 instance
   provisioner "remote-exec" {
     inline = [ 
       "sudo yum install unzip -y",

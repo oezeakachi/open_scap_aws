@@ -4,24 +4,14 @@ This project will create a testing environment that runs vunerability scans on a
 
 ## High level diagram
 
-![Diagram](img/demo-tform-aws-vpc.png)
+![Diagram](img/scap_testng.png)
+
+## AWS Logical Diagram
+![Diagram](img/openscap_archi.png)
 
 
-## Providers
 
-No provider.
+## References
 
-## Inputs
-
-| Name | Description | Type | Default | Required |
-|------|-------------|------|---------|:--------:|
-| namespace | The project namespace to use for unique resource naming | `string` | `"LL-TEST"` | no |
-| region | AWS region | `string` | `"us-east-1"` | no |
-
-## Outputs
-
-| Name | Description |
-|------|-------------|
-| private\_connection\_string | Copy/Paste/Enter - You are in the private ec2 instance |
-| public\_connection\_string | Copy/Paste/Enter - You are in the matrix |
-
+- https://aws.amazon.com/blogs/security/how-to-automate-scap-testing-with-aws-systems-manager-and-security-hub/
+- https://github.com/bugbiteme/demo-tform-aws-vpc
