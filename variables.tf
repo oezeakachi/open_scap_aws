@@ -1,3 +1,5 @@
+// Variables that are used golbally in the terraform code
+
 variable "namespace" {
   description = "The project namespace to use for unique resource naming"
   default     = "IMB"

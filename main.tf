@@ -1,13 +1,17 @@
+# Import Networking module that creates VPC and configures networking - SG etc
 module "networking" {
   source    = "./modules/networking"
   namespace = var.namespace
 }
 
+# Imports modules that creates ssh key that uploads private key to aws and keeps the public key in a specified directory
 module "ssh-key" {
   source    = "./modules/ssh-key"
   namespace = var.namespace
 }
 
+
+# Maps the environment variable to default bucket_name 
 
 variable "environment" {
   type    = map
@@ -15,6 +19,8 @@ variable "environment" {
     bucket_name = "Scap_Results"
   }
 }
+
+# S3 Bucket creation
 
 resource "aws_s3_bucket" "SCAPScanResultsBucket" {
   bucket = "${var.SCAPScanResults}"
@@ -29,7 +35,7 @@ resource "aws_s3_bucket" "SCAPScanResultsBucket" {
   }
 }
 
-
+# Setting access to S3 bucket
 resource "aws_s3_bucket_public_access_block" "SCAPScanResultsBucketPublicAccessBlock" {
   bucket                            = aws_s3_bucket.SCAPScanResultsBucket.id
   block_public_acls                 = false
@@ -38,7 +44,7 @@ resource "aws_s3_bucket_public_access_block" "SCAPScanResultsBucketPublicAccessB
   restrict_public_buckets           = false
 }
 
-
+# Creation of S3 bucket policy
 resource "aws_s3_bucket_policy" "SCAPScanResultsBucketPolicy" {
   bucket = aws_s3_bucket.SCAPScanResultsBucket.id
 
@@ -60,7 +66,7 @@ resource "aws_s3_bucket_policy" "SCAPScanResultsBucketPolicy" {
   })
 }
 
-
+# Imports the EC2 Module which creates the EC2 instance to be tested
 
 module "ec2" {
   source     = "./modules/ec2"
@@ -74,13 +80,14 @@ module "ec2" {
 
 
 
-
+# Creates cloudwatch Logs
 
 resource "aws_cloudwatch_log_group" "lambda_activities" {
   name              = "Lambda_logs"
 }
 
 
+# Cloudwatch role creation
 
 resource "aws_iam_role" "CW-Access-IamRole" {
   name = "cw-logs-role"
@@ -101,6 +108,7 @@ resource "aws_iam_role" "CW-Access-IamRole" {
 EOF
 }
 
+# Cloudwatch policy creation
 
 resource "aws_iam_policy" "policy-for-cw" {
   name        = "policy-for-cw"
@@ -123,6 +131,8 @@ resource "aws_iam_policy" "policy-for-cw" {
 )
 }
 
+# Attachment of policy to role
+
 resource "aws_iam_role_policy_attachment" "cw-attach" {
   for_each = {
     "policy-for-cw"   = aws_iam_policy.policy-for-cw.arn
@@ -133,11 +143,14 @@ resource "aws_iam_role_policy_attachment" "cw-attach" {
   policy_arn = each.value
 }
 
+# Attachment of role to instance profile
 
 resource "aws_iam_instance_profile" "lambda_profile" {
   name = "CW-IamProfile"
   role = aws_iam_role.CW-Access-IamRole.name
 }
+
+# Creation of clouwatch group and setting of retention policy 
 
 resource "aws_cloudwatch_log_group" "lambda_log_group" {
   name              = "Scap_filtering"
@@ -161,6 +174,7 @@ resource "aws_s3_bucket_notification" "SCAPScanResultsBucketNotification" {
 
 
 
+# Creation of Lambda function 
 
 resource "aws_lambda_function" "ProcessSCAPScanResults" {
   filename      = "${path.module}/lambda_function.py.zip"
@@ -169,12 +183,13 @@ resource "aws_lambda_function" "ProcessSCAPScanResults" {
   handler       = "lambda_function.lambda_handler"
   runtime       = "python3.8"
   timeout       = 300
-  memory_size      = 512
+  memory_size      = 512 //Increase if needed to avoid timeout of lambda
   source_code_hash = filebase64sha256("${path.module}/lambda_function.py.zip")
   depends_on    = [aws_cloudwatch_log_group.lambda_log_group]
 }
 
 
+# Creation of role for lambda
 
 resource "aws_iam_role" "SCAPEC2InstanceRole" {
   name = "SCAPEC2InstanceRole"
@@ -194,6 +209,8 @@ resource "aws_iam_role" "SCAPEC2InstanceRole" {
 }
 EOF
 }
+
+// Policy to give lambda access to S3
 
 resource "aws_iam_policy" "policy-for-s3-scap" {
   name        = "policy-for-s3-scap"
@@ -222,6 +239,7 @@ resource "aws_iam_role_policy_attachment" "s3-scap-attach" {
   policy_arn = aws_iam_policy.policy-for-s3-scap.arn
 } */
 
+// policy to give lambda acces to ssm
 resource "aws_iam_policy" "policy-for-ssm-scap" {
   name = "policy-for-ssm-scap"
 
@@ -239,6 +257,7 @@ resource "aws_iam_policy" "policy-for-ssm-scap" {
 EOF
 }
 
+// policy to give lambda access to dynamodb
 resource "aws_iam_policy" "policy-for-dynamodb-scap" {
   name = "policy-for-dynamodb-scap"
 
@@ -255,6 +274,8 @@ resource "aws_iam_policy" "policy-for-dynamodb-scap" {
 }
 EOF
 } 
+
+// Policy to give lambda access to Security Hub
 
 resource "aws_iam_policy" "policy-for-security-hub-scap" {
   name = "policy-for-security-hub-scap"
@@ -284,7 +305,7 @@ resource "aws_iam_role_policy_attachment" "ssm-scap-attach" {
 } */
 
 
-
+// Attaching the policies to the role the SCAPEC2InstanceRole
 
 resource "aws_iam_role_policy_attachment" "s3-scap-ssm-attach" {
   for_each = {
@@ -301,6 +322,7 @@ resource "aws_iam_role_policy_attachment" "s3-scap-ssm-attach" {
   policy_arn = each.value
 }
 
+// Create S3 bucket notification to create S3 ObjectCreated event for .xml file types
 
 resource "aws_s3_bucket_notification" "SCAPScanResultsBucketNotification" {
   bucket = aws_s3_bucket.SCAPScanResultsBucket.id
@@ -313,6 +335,7 @@ resource "aws_s3_bucket_notification" "SCAPScanResultsBucketNotification" {
 
 } 
 
+// Create lambda permission to invoke function when it recieves S3 notification
 
 resource "aws_lambda_permission" "S3InvokeLambdaPermission" {
   statement_id  = "AllowS3Invoke"
@@ -321,6 +344,8 @@ resource "aws_lambda_permission" "S3InvokeLambdaPermission" {
   principal     = "s3.amazonaws.com"
   source_arn    = aws_s3_bucket.SCAPScanResultsBucket.arn
 }
+
+// SSM checks if Security Hub is enabled 
 
 resource "aws_ssm_parameter" "EnableSecurityHubFindingsParameter" {
   name        = "/SCAPTesting/EnableSecurityHub"
@@ -368,6 +393,8 @@ resource "aws_dynamodb_table" "SCAPScanResults" {
   }
 }
 
+// SSM Document creation
+
 resource "aws_ssm_document" "scan-process" {
   name            = "scanning"
   document_format = "YAML"
@@ -400,6 +427,8 @@ resource "aws_ssm_document" "scan-process" {
               - /usr/local/bin/aws s3 cp error.log s3://${aws_s3_bucket.SCAPScanResultsBucket.id}/${module.ec2.instance_id}/error.log
 DOC
 } 
+
+// SSM Document is invoked
 
 resource "aws_ssm_association" "run_ssm" {
   name = aws_ssm_document.scan-process.name
