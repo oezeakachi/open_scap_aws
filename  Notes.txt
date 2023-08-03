@@ -1,0 +1,81 @@
+
+## Example of template_file creation
+
+## Template file - init.sh.tpl
+
+#!/bin/bash
+echo "Printing text with newline"
+echo -n "Printing text without newline"
+echo -e "\nRemoving \t backslash \t characters\n"
+
+
+
+
+#################################################################
+data "template_file" "init" {
+  template = "${file("${path.module}/init.sh.tpl")}"
+}
+#################################################################
+
+resource "aws_instance" "ec2_public" {
+  //count                       = 1
+  ami                         = data.aws_ami.Fedora-obi.id
+  associate_public_ip_address = true
+  instance_type               = "t3.2xlarge"
+  key_name                    = var.key_name
+  subnet_id                   = var.vpc.public_subnets[0]
+  vpc_security_group_ids      = [var.sg_pub_id]
+  iam_instance_profile        = aws_iam_instance_profile.instance_profile.name
+  //iam_instance_profile        = "${aws_iam_instance_profile.S3_profile.name},${aws_iam_instance_profile.SSM_profile.name}"
+  //iam_instance_profile        = count.index == 0 ? aws_iam_instance_profile.S3_profile.name : aws_iam_instance_profile.SSM_profile.name
+  user_data = data.template_file.init.rendered - insert it here
+
+  tags = {
+    "Name" = "${var.namespace}"
+  }
+
+  provisioner "file" {
+    source      = "./${var.key_name}.pem"
+    destination = "/home/fedora/${var.key_name}.pem"
+
+    connection {
+      type        = "ssh"
+      user        = "fedora"
+      private_key = file("${var.key_name}.pem")
+      host        = self.public_ip
+    }
+  }
+
+  provisioner "remote-exec" {
+    inline = [
+      "chmod 400 ~/${var.key_name}.pem"
+    ]
+
+    connection {
+      type        = "ssh"
+      user        = "fedora"
+      private_key = file("${var.key_name}.pem")
+      host        = self.public_ip
+    }
+  }
+
+  provisioner "remote-exec" {
+    inline = [ 
+      "sudo yum install unzip -y",
+      "curl 'https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip' -o 'awscliv2.zip'",
+      "unzip awscliv2.zip",
+      "sudo ./aws/install",
+      "sudo yum install -y https://s3.eu-west-1.amazonaws.com/amazon-ssm-eu-west-1/latest/linux_amd64/amazon-ssm-agent.rpm",
+      "sudo systemctl enable amazon-ssm-agent",
+      "sudo systemctl start amazon-ssm-agent",
+      "sudo yum install openscap-scanner scap-security-guide -y"
+    ]
+
+    connection {
+      type        = "ssh"
+      user        = "fedora"
+      private_key = file("${var.key_name}.pem")
+      host        = self.public_ip
+    }
+  }
+}
