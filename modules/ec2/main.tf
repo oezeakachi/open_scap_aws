@@ -123,10 +123,6 @@ resource "aws_instance" "ec2_public" {
   subnet_id                   = var.vpc.public_subnets[0]
   vpc_security_group_ids      = [var.sg_pub_id]
   iam_instance_profile        = "S3-SSM-IamProfile"
-  //iam_instance_profile        = "${aws_iam_instance_profile.S3_profile.name},${aws_iam_instance_profile.SSM_profile.name}"
-  //iam_instance_profile        = count.index == 0 ? aws_iam_instance_profile.S3_profile.name : aws_iam_instance_profile.SSM_profile.name
-  //user_data = data.template_file.init.rendered
-
   tags = {
     "Name" = "${var.namespace}"
   }

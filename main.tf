@@ -160,20 +160,6 @@ resource "aws_cloudwatch_log_group" "lambda_log_group" {
   }
 }
 
-
-
-/*
-resource "aws_s3_bucket_notification" "SCAPScanResultsBucketNotification" {
-  bucket = aws_s3_bucket.SCAPScanResultsBucket.id
-
-  lambda_function {
-    lambda_function_arn = aws_lambda_function.ProcessSCAPScanResults.arn
-    events              = ["s3:ObjectCreated:*"]
-  }
-} */
-
-
-
 # Creation of Lambda function 
 
 resource "aws_lambda_function" "ProcessSCAPScanResults" {
@@ -230,15 +216,6 @@ resource "aws_iam_policy" "policy-for-s3-scap" {
 EOF
 }
 
-/*
-resource "aws_iam_role_policy_attachment" "s3-scap-attach" {
-    
-    
- 
-  role       = aws_iam_role.SCAPEC2InstanceRole.name
-  policy_arn = aws_iam_policy.policy-for-s3-scap.arn
-} */
-
 // policy to give lambda acces to ssm
 resource "aws_iam_policy" "policy-for-ssm-scap" {
   name = "policy-for-ssm-scap"
@@ -293,16 +270,6 @@ resource "aws_iam_policy" "policy-for-security-hub-scap" {
 }
 EOF
 } 
-
-
-/*
-resource "aws_iam_role_policy_attachment" "ssm-scap-attach" {
-    
-    
- 
-  role       = aws_iam_role.SCAPEC2InstanceRole.name
-  policy_arn = aws_iam_policy.policy-for-ssm-scap.arn
-} */
 
 
 // Attaching the policies to the role the SCAPEC2InstanceRole
@@ -438,12 +405,3 @@ resource "aws_ssm_association" "run_ssm" {
     values = ["${module.ec2.instance_id}"]
   }
 }
-
-
-
-
-/*
-resource "aws_lambda_invocation" "invoke_lambda" {
-  function_name = aws_lambda_function.ProcessSCAPScanResults.arn
-  input         = "{}" // set your input payload here
-}*/
