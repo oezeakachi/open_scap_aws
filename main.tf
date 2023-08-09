@@ -375,10 +375,10 @@ resource "aws_ssm_document" "scan-process" {
         properties:
           - id: '0.aws:runShellScript'
             runCommand:  
-              - echo "Add the ssg-fedora-ds.xml to the scriptFile variable"
-              - scriptFile='/usr/share/xml/scap/ssg/content/ssg-fedora-ds.xml'
-              - echo "Run Openscap command"
-              - oscap xccdf eval --fetch-remote-resources --profile  xccdf_org.ssgproject.content_profile_standard --results-arf arf.xml --report report.html $scriptFile
+              - echo "Add the rhel9.xml to the scriptFile variable"
+              - scriptFile='/usr/share/xml/scap/ssg/content/ssg-rhel9-ds.xml'
+              - echo "Run Openscap command" 
+              - oscap xccdf eval  --profile xccdf_org.ssgproject.content_profile_pci-dss --results-arf arf.xml --report report.html $scriptFile
               - echo "Grab instance id"
               - instanceId=$(curl http://169.254.169.254/latest/meta-data/instance-id)
               - echo "Create Timestamp"

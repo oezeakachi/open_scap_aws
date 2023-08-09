@@ -189,7 +189,7 @@ def getIgnoreList():
     
 def buildSecurityHubFindingsList(securityHubFindings, root, instanceId, item, region, aws_account_id, testVersion, bucket_name, file_key):
     rule = root.find(".//{http://checklists.nist.gov/xccdf/1.2}Rule[@id='" + item.attrib.get("idref") + "']")
-    profile = root.find('.//{http://checklists.nist.gov/xccdf/1.2}Profile[@id="xccdf_org.ssgproject.content_profile_standard"]')
+    profile = root.find('.//{http://checklists.nist.gov/xccdf/1.2}Profile[@id="xccdf_org.ssgproject.content_profile_pci-dss"]')
 
     # fix the time format from OpenSCAP to Security Hub
     time = item.attrib.get("time")

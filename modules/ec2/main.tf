@@ -1,11 +1,11 @@
 // Data filter searches for AMI 
 
-data "aws_ami" "obi-fedora" {
+data "aws_ami" "rhel9" {
   most_recent = true
 
   filter {
     name   = "image-id"
-    values = ["ami-01e8b0324bd546dc6"]
+    values = ["ami-0eb1b0fea2a6b97d1"]
   }
 
   filter {
@@ -25,7 +25,7 @@ data "aws_ami" "obi-fedora" {
 
   filter {
     name   = "name"
-    values = ["obi-fedora"]
+    values = ["composer-api-65391c17-a8df-4e36-ac3a-fba061a2be95"]
   }
 }
 
@@ -116,7 +116,7 @@ resource "aws_iam_instance_profile" "instance_profile" {
 
 resource "aws_instance" "ec2_public" {
   //count                       = 1
-  ami                         = data.aws_ami.obi-fedora.id
+  ami                         = data.aws_ami.rhel9.id
   associate_public_ip_address = true
   instance_type               = "t3.2xlarge"
   key_name                    = var.key_name
@@ -129,11 +129,11 @@ resource "aws_instance" "ec2_public" {
 
   provisioner "file" {
     source      = "./${var.key_name}.pem"
-    destination = "/home/fedora/${var.key_name}.pem"
+    destination = "/home/ec2-user/${var.key_name}.pem"
 
     connection {
       type        = "ssh"
-      user        = "fedora"
+      user        = "ec2-user"
       private_key = file("${var.key_name}.pem")
       host        = self.public_ip
     }
@@ -146,12 +146,12 @@ resource "aws_instance" "ec2_public" {
 
     connection {
       type        = "ssh"
-      user        = "fedora"
+      user        = "ec2-user"
       private_key = file("${var.key_name}.pem")
       host        = self.public_ip
     }
   }
-// Configuration od EC2 instance
+// Configuration of EC2 instance
   provisioner "remote-exec" {
     inline = [ 
       "sudo yum install unzip -y",
@@ -166,7 +166,7 @@ resource "aws_instance" "ec2_public" {
 
     connection {
       type        = "ssh"
-      user        = "fedora"
+      user        = "ec2-user"
       private_key = file("${var.key_name}.pem")
       host        = self.public_ip
     }
