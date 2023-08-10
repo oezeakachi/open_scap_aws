@@ -234,23 +234,6 @@ resource "aws_iam_policy" "policy-for-ssm-scap" {
 EOF
 }
 
-// policy to give lambda access to dynamodb
-resource "aws_iam_policy" "policy-for-dynamodb-scap" {
-  name = "policy-for-dynamodb-scap"
-
-  policy = <<EOF
-{
-  "Version": "2012-10-17",
-    "Statement": [
-        {
-            "Effect": "Allow",
-            "Action": "dynamodb:*",
-            "Resource": "*"
-        }
-    ]
-}
-EOF
-} 
 
 // Policy to give lambda access to Security Hub
 
@@ -278,7 +261,6 @@ resource "aws_iam_role_policy_attachment" "s3-scap-ssm-attach" {
   for_each = {
     "policy-for-s3-scap" = aws_iam_policy.policy-for-s3-scap.arn
     "policy-for-ssm-scap"  = aws_iam_policy.policy-for-ssm-scap.arn
-    "policy-for-dynamodb-scap"  = aws_iam_policy.policy-for-dynamodb-scap.arn
     "policy-for-security-hub-scap" = aws_iam_policy.policy-for-security-hub-scap.arn
     "cloudwatch-full-access" = "arn:aws:iam::aws:policy/CloudWatchFullAccess"
     //"s3-full-access"  = "arn:aws:iam::aws:policy/AmazonS3FullAccess"
@@ -322,43 +304,6 @@ resource "aws_ssm_parameter" "EnableSecurityHubFindingsParameter" {
 }
 
 
-
-
-
-# DynamoDB table to hold the ignore list
-# Note that backups are not enabled for this table, if you wish to enable backup you 
-# can set PointInTimeRecoveryEnabled for the table
-resource "aws_dynamodb_table" "SCAPScanIgnoreList" {
-  name           = "SCAPScanIgnoreList"
-  #billing_mode   = "PAY_PER_REQUEST"
-  read_capacity  = 1
-  write_capacity = 2
-  hash_key       = "SCAP_Rule_Name"
-  attribute {
-    name = "SCAP_Rule_Name"
-    type = "S"
-  }
-
-
-}
-
-resource "aws_dynamodb_table" "SCAPScanResults" {
-  name           = "SCAPScanResults"
-  #billing_mode   = "PAY_PER_REQUEST"
-  read_capacity  = 1
-  write_capacity = 2
-  hash_key       = "InstanceId"
-  range_key = "SCAP_Rule_Name"
-  attribute {
-    name = "InstanceId"
-    type = "S"
-  }
-
-  attribute {
-    name = "SCAP_Rule_Name"
-    type = "S"
-  }
-}
 
 // SSM Document creation
 
