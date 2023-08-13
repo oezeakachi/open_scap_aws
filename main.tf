@@ -305,6 +305,7 @@ resource "aws_ssm_parameter" "EnableSecurityHubFindingsParameter" {
 
 
 
+
 // SSM Document creation
 
 resource "aws_ssm_document" "scan-process" {

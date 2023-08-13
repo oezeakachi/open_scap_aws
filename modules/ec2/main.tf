@@ -154,6 +154,10 @@ resource "aws_instance" "ec2_public" {
 // Configuration of EC2 instance
   provisioner "remote-exec" {
     inline = [ 
+      "sudo subscription-manager remove --all",        
+      "sudo subscription-manager clean",
+      "sudo subscription-manager register --username rh-ee-<username>  --password <password> --auto-attach",
+      "sudo yum repolist",
       "sudo yum install unzip -y",
       "curl 'https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip' -o 'awscliv2.zip'",
       "unzip awscliv2.zip",
