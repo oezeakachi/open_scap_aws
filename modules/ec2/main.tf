@@ -5,7 +5,7 @@ data "aws_ami" "rhel9" {
 
   filter {
     name   = "image-id"
-    values = ["ami-0eb1b0fea2a6b97d1"]
+    values = ["ami-03a291743697ffd0b"]
   }
 
   filter {
@@ -25,7 +25,7 @@ data "aws_ami" "rhel9" {
 
   filter {
     name   = "name"
-    values = ["composer-api-65391c17-a8df-4e36-ac3a-fba061a2be95"]
+    values = ["composer-api-48539f0a-8fd7-4c46-a304-6032982a3631"]
   }
 }
 
@@ -156,7 +156,7 @@ resource "aws_instance" "ec2_public" {
     inline = [ 
       "sudo subscription-manager remove --all",        
       "sudo subscription-manager clean",
-      "sudo subscription-manager register --username rh-ee-<username>  --password <password> --auto-attach",
+      "sudo subscription-manager register --username rh-ee-oezeakac  --password Ambrosius925! --auto-attach",
       "sudo yum repolist",
       "sudo yum install unzip -y",
       "curl 'https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip' -o 'awscliv2.zip'",
